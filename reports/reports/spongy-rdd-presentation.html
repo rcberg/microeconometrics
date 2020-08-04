@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Assessing the ‘Hillenburg Effect’</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="R. Chris Berg M.A., M.S." />
+    <meta name="date" content="2020-08-03" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Assessing the ‘Hillenburg Effect’
+### R. Chris Berg M.A., M.S.
+### Lincoln Street Data Institute
+### 2020-08-03
+
+---
+
+
+
+
+
+# Background
+
+- The "Hillenburg Effect" is a term that has been employed at least since Reddit user `@Pyrollamas` posted a graph of *Spongebob Squarepants* ratings, and described the seeming-decline of the show's ratings around episode 60 (when creator Stephen Hillenburg left the show).
+
+--
+
+.center[
+![hillenburg-effect](hillenburg-orig-fig.png)
+]
+
+---
+# The 'Hillenburg Effect': Today
+
+- Image was posted 2 years ago; ratings and vote counts have changed somewhat since.
+
+.center[
+![hillenburg-effect](spongebob-rate.png)
+]
+
+--
+
+- Some differences, but trends seem to remain today.
+
+---
+# Research question
+
+- **Does the Hillenburg Effect exist?**
+
+--
+
+- Need to know: What is the 'Hillenburg Effect' specifically?
+
+--
+
+  - I will operate under the definition of the Hillenburg Effect as: a hypothesized change in either the *level of ratings*, the *trend in ratings*, or both, following the departure of Stephen Hillenburg from the writing staff *after* the 60th episode.
+  
+---
+# "Bin scatter" of Ratings
+
+- Removing some of the noise from the original data:
+
+&lt;img src="spongy-rdd-presentation_files/figure-html/binscatter-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+class: inverse, center, middle
+
+# Methodology
+---
+
+# Data
+
+- The data used to estimate the effect are the same IMDB ratings as the original graphic, scraped from the source in the same way.
+
+--
+  - Focus on the same episodes: a sequence of ratings and votes for Episodes 1 through 203, the first nine seasons.
+  - Variable of interest is ratings.
+--
+- Given this kind of data, there are multiple types of models we could use to estimate the Hillenburg Effect.
+
+---
+# Methodology
+
+- *Filtering estimates:* Pros of filtering estimates are that they can recover statistics about a trace (like the state/expected value and variance) at every point. 
+    - Cons of filtering estimates are that "change in trend" means something different (change in the stable/non-white noise trace component that the filter estimates) and depending on the underlying state-space model, it's difficult to infer what a "change in slope" would mean.
+--
+
+- *Regression estimates:* Regression estimates include any linear model like a basic or multivariate least-squares estimates or ANOVA. Pros of regression estimates are that (at least under any similar assumptions in other methods e.g. filtering) inference is straightforward thanks to formulas for estimate variance. Cons are, similar to filtering estimates, dependence on the validity of the regression model. 
+---
+# Discontinuity estimator
+
+- The estimation methods described are not actually so different. Both depend on the validity of underlying linear models. Because of their similarity, it is possible to take the "best of both worlds."
+- The [Regression Discontinuity](https://www.princeton.edu/~davidlee/wp/RDDEconomics.pdf) estimator is often used to try and estimate causal effect sizes from threshhold discontinuities (i.e. [estimating the causal impact of arrest on future crime by using the 0.08 BAC discontinuity](https://www.aeaweb.org/articles?id=10.1257/aer.20130189) for arrest).
+--
+
+  - The way we can apply it here is very similar to the [structural break tests](https://en.wikipedia.org/wiki/Structural_break) tests that would be used with filtering estimates, though, and have similar interpretation.
+  - **Interpretation:** We are using methods very similar to regression discontinuity to try and estimate whether or not it's likely that there was a sudden "break" in the pattern of episode ratings after the 60th episode.
+--
+
+- Specifically, I will use *local linear estimation with a rectangular kernel*.
+
+---
+# What it is
+
+It's just the following equation:
+
+$$R_i = \beta_0 + \beta_1 \cdot x_i +  \beta_2 \cdot D_i + \beta_3 \cdot (D_i x_i) + \varepsilon_i $$
+
+--
+
+- `\(R_i\)` is the rating of episode `\(i\)`; `\(D_i = \{0 \ \text{if} \ i \leq c \ ,\ 1 \ \text{if} \ i &gt; c\}\)`; and `\(x_i \equiv (i-c)\)`. 
+
+--
+
+- Our "jump" estimate is the estimate of `\(\beta_2\)`, `\(\hat{\beta_2}\)`. It will tell us how much lower (if at all) the ratings started-off after Hillenburg left.
+- Our trend estimate is the estimate of `\(\beta_3\)`, `\(\hat{\beta_3}\)`. It will tell us how much (if at all) the ratings trend declined as the episodes went-on after Hillenburg's departure.
+
+--
+
+- Basically: We fit 2 lines to the data, one on either side of `\(c=60\)`. We compare the difference between the lines as `\(i\)` approaches `\(c\)`. This difference is `\(\beta_2\)`, but is measured (possibly with bias, and/or error) as `\(\hat{\beta_2}\)`.
+
+---
+# Effect identification problem
+
+- We can't be sure whether `\(\text{cov}(x_i,\varepsilon_i) \neq 0\)`, and so we can't rule-out hypotheses like Hillenburg leaving *because* the writing quality in the show was declining (which would presumably be reflected by a realization of `\(c\)` after the background quality picked-up in `\(\varepsilon_i\)` was declining). 
+
+--
+
+  - If Hillenburg had-- for example-- suddenly and unexpectedly quit right after the 60th episode due to some unforseen events or circumstances (major health accidents, for instance), then we could be more convinced that this wasn't the case, and could expect any decline in ratings to reflect genuine quality differences. Then, it would inch slightly closer to the statistical conditions of a randomized experiment.
+
+--
+
+- We've talked about what we *can't* do, now we'll see what we *can* estimate.
+---
+# Steps to discontinuity estimation
+
+- The estimation procedure (in English) based on [Lee and Lemieux(2010)](https://www.princeton.edu/~davidlee/wp/RDDEconomics.pdf) (JEL) is to:
+--
+
+  1. Pick a bandwidth `\(bw\)` around the threshhold `\(c=60\)`, i.e. `\(c \pm bw\)`.
+  
+  2. Pick a model `\(f(x_i,c)\)`, usually among set of polynomials in `\(x_i\)`.
+  
+  3. Trim the data to all `\(i \in [ c - bw , c + bw]\)`.
+  
+  4. Estimate `\(R_i = f(x_i,c)\)` using OLS or WLS. 
+  
+  5. Cross-validate by repeating steps 1-4 for `\(bw \in \left[\overline{bw}_{min}, \text{median}(\text{min}\{c,(N-c)\}) \right]\)`
+  - In our case, `\(bw \in \left[\overline{bw}_{min}, \frac{1}{2}c \right]\)`. I pick `\(\overline{bw}_{min} = 5\)`.
+  
+---
+# Example bandwidth selection: Small
+
+&lt;img src="spongy-rdd-presentation_files/figure-html/bw-example-small-1.png" width="80%" height="80%" style="display: block; margin: auto;" /&gt;
+
+---
+# Example bandwidth selection: Large
+
+&lt;img src="spongy-rdd-presentation_files/figure-html/bw-example-big-1.png" width="80%" height="80%" style="display: block; margin: auto;" /&gt;
+
+---
+# Jump estimates across bandwidths
+
+&lt;img src="spongy-rdd-presentation_files/figure-html/bandwidths-jump-1.png" width="80%" height="80%" style="display: block; margin: auto;" /&gt;
+
+---
+# Trend estimates across bandwidths
+
+&lt;img src="spongy-rdd-presentation_files/figure-html/bandwidths-trend-1.png" width="80%" height="80%" style="display: block; margin: auto;" /&gt;
+
+---
+# Sampling inference
+
+There seems to be statistically insignificant negative variation occurring at the 60th Spongebob episode.
+
+- Ratings may have been slightly (0.5 stars) lower at the start of the fourth season.
+- No clear *start* of a decline specifically at the start of the fourth season. 
+
+--
+
+- *Interpretation*: Based on a general `\(t\)` sampling distribution it would be unlikely that there was a significant 'structural break' in the ratings trends when Hillenburg departed. Estimates of the break fall inside of the 95\% confidence interval for almost all choices of bandwidth, using the linear model. 
+
+---
+# Empirical p-value inference
+
+The problem is that, based on the first figures, the distribution of episode ratings varies as the series progresses. 
+
+- For this reason, the valid form of inference is to "assign" Hillenburg quitting the show to every possible episode and estimating that "placebo" effect. 
+
+- If the "true" effect (i.e. the effect measured at the 60th episode) ranks highly relative to the distribution of placebo treatments, we may infer that Hillenburg's quit was associated with a significant change in ratings.
+
+---
+# Empirical p-value inference: Jump effect
+
+&lt;img src="spongy-rdd-presentation_files/figure-html/jump-ri-1.png" width="85%" height="85%" style="display: block; margin: auto;" /&gt;
+
+---
+# Empirical p-value inference: Trend effect
+
+
+&lt;img src="spongy-rdd-presentation_files/figure-html/trend-ri-1.png" width="85%" height="85%" style="display: block; margin: auto;" /&gt;
+
+---
+# Empirical p-values
+
+- Discontinuity estimates:
+
+
+```
+##    band rank_est     p_est
+## 1:   10      169 0.9184783
+## 2:   20       85 0.5182927
+## 3:   30       89 0.6180556
+```
+
+- Trend estimates
+
+
+```
+##    band rank_est     p_est
+## 1:   10       78 0.4239130
+## 2:   20       53 0.3231707
+## 3:   30       27 0.1875000
+```
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
