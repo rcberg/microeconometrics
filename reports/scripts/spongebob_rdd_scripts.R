@@ -343,7 +343,7 @@ for(i in 1:3){
                         p_t = (1/nrow(band_i_trn_dt))*(1+nrow(band_i_trn_dt)-rank(abs(statistic))) , 
                         coef="discontinuity")
     ][
-      ,.(rank_est,rank_t,p_est,p_t,band,coef,true_disc)
+      ,.(rank_est,rank_t,p_est,p_t,band,coef,true_disc,thresh)
     ]
   
   band_i_trt_dt <- 
@@ -355,7 +355,7 @@ for(i in 1:3){
                         p_t = (1/nrow(band_i_trt_dt))*(1+nrow(band_i_trt_dt)-rank(abs(statistic))) ,
                         coef="trend")
     ][
-      ,.(rank_est,rank_t,p_est,p_t,band,coef,true_disc)
+      ,.(rank_est,rank_t,p_est,p_t,band,coef,true_disc,thresh)
     ]
   
   thresh_pval_dt <- rbind(band_pval_trn_dt,
@@ -500,7 +500,7 @@ for(i in 1:3){
                         p_t = (1/nrow(band_i_trn_dt))*(1+nrow(band_i_trn_dt)-rank(abs(statistic))) , 
                         coef="discontinuity")
     ][
-      ,.(rank_est,rank_t,p_est,p_t,band,coef,true_disc)
+      ,.(rank_est,rank_t,p_est,p_t,band,coef,true_disc,thresh)
     ]
   
   band_i_trt_dt <- 
@@ -512,7 +512,7 @@ for(i in 1:3){
                         p_t = (1/nrow(band_i_trt_dt))*(1+nrow(band_i_trt_dt)-rank(abs(statistic))) ,
                         coef="trend")
     ][
-      ,.(rank_est,rank_t,p_est,p_t,band,coef,true_disc)
+      ,.(rank_est,rank_t,p_est,p_t,band,coef,true_disc,thresh)
     ]
   
   thresh_pval_dt <- rbind(band_pval_trn_dt,
